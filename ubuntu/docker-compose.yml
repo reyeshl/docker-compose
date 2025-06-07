@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  ubuntu:
+    image: ubuntu:22.04
+    container_name: ubuntu_secure
+    command: /bin/bash
+    restart: unless-stopped
+    networks:    
+      - my_network
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+networks: 
+  my_network:

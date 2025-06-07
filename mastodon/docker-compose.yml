@@ -1,0 +1,137 @@
+version: '3.8'
+services:
+  db:
+    restart: unless-stopped
+    image: postgres:15-alpine
+    shm_size: 256mb
+    networks:
+      - internal_network
+    env_file:
+      - .env
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER:-mastodon}
+      POSTGRES_DB: ${POSTGRES_DB:-mastodon_production}
+      POSTGRES_HOST_AUTH_METHOD: md5  # Secure authentication instead of trust
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-mastodon}"]
+    volumes:
+      - ./postgres14:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+
+  redis:
+    restart: unless-stopped
+    image: redis:7-alpine
+    networks:
+      - internal_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+    volumes:
+      - ./redis:/data
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+
+#  es:
+#    restart: always
+#    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+#    environment:
+#      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+#      - "cluster.name=es-mastodon"
+#      - "discovery.type=single-node"
+#      - "bootstrap.memory_lock=true"
+#    networks:
+#      - internal_network
+#    healthcheck:
+#      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+#    volumes:
+#      - ./elasticsearch:/usr/share/elasticsearch/data
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+  web:
+    build: .
+    image: tootsuite/mastodon
+    restart: unless-stopped
+    env_file: 
+      - .env.production
+      - .env
+    command: bash -c "rm -f /mastodon/tmp/pids/server.pid; bundle exec rails s -p 3000"
+    networks:
+      - external_network
+      - internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider --proxy=off localhost:3000/health || exit 1"]
+    ports:
+      - "127.0.0.1:3000:3000"  # Bind to localhost only
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./public/system:/mastodon/public/system
+    security_opt:
+      - no-new-privileges:true
+
+  streaming:
+    build: .
+    image: tootsuite/mastodon
+    restart: unless-stopped
+    env_file: 
+      - .env.production
+      - .env
+    command: node ./streaming
+    networks:
+      - external_network
+      - internal_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider --proxy=off localhost:4000/api/v1/streaming/health || exit 1"]
+    ports:
+      - "127.0.0.1:4000:4000"  # Bind to localhost only
+    depends_on:
+      - db
+      - redis
+    security_opt:
+      - no-new-privileges:true
+
+  sidekiq:
+    build: .
+    image: tootsuite/mastodon
+    restart: unless-stopped
+    env_file: 
+      - .env.production
+      - .env
+    command: bundle exec sidekiq
+    depends_on:
+      - db
+      - redis
+    networks:
+      - external_network
+      - internal_network
+    volumes:
+      - ./public/system:/mastodon/public/system
+    security_opt:
+      - no-new-privileges:true
+## Uncomment to enable federation with tor instances along with adding the following ENV variables
+## http_proxy=http://privoxy:8118
+## ALLOW_ACCESS_TO_HIDDEN_SERVICE=true
+#  tor:
+#    image: sirboops/tor
+#    networks:
+#      - external_network
+#      - internal_network
+#
+#  privoxy:
+#    image: sirboops/privoxy
+#    volumes:
+#      - ./priv-config:/opt/config
+#    networks:
+#      - external_network
+#      - internal_network
+
+networks:
+  external_network:
+  internal_network:
+    internal: true

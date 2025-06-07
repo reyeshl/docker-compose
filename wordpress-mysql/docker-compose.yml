@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: wordpress_mysql
+    # Removed port exposure for security
+    # ports:
+    #   - 3307:3306
+    networks: 
+      - my_network    
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wpdb1}
+      MYSQL_USER: ${MYSQL_USER:-dbuser1}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./db_data:/var/lib/mysql
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+
+  wordpress:
+    image: wordpress:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:82:80"  # Bind to localhost only
+    env_file:
+      - .env
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${MYSQL_USER:-dbuser1}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wpdb1}
+    networks: 
+      - my_network          
+    volumes:
+      - ./wp_data:/var/www/html
+    depends_on:
+      - db
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  db_data:
+  wp_data:
+networks: 
+  my_network:

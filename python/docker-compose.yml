@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    container_name: python_mysql
+    networks: 
+      - python_network    
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-pydb1}
+      MYSQL_USER: ${MYSQL_USER:-pydbuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./db_data:/var/lib/mysql
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+
+  python:
+    container_name: python_app
+    image: python:3.11-slim
+    networks: 
+      - python_network
+    depends_on:
+      - db
+    env_file:
+      - .env
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+volumes:
+  db_data:
+networks: 
+  python_network:

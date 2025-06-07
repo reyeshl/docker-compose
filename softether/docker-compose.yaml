@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  softether:
+    image: ubuntu:22.04
+    container_name: softether_secure
+    networks: 
+      - softether_network        
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/tmp
+
+networks: 
+  softether_network:

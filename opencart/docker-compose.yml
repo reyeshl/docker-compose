@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  mariadb:
+    image: mariadb:10.11
+    restart: unless-stopped
+    networks:
+      - opencart_network
+    env_file:
+      - .env
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_USER: ${MARIADB_USER:-opencart_user}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-opencart_db}
+    volumes:
+      - mariadb_data:/bitnami/mariadb
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+
+  opencart:
+    image: bitnami/opencart:3
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:80:8080"   # Bind to localhost only
+      - "127.0.0.1:443:8443" # Bind to localhost only
+    networks:
+      - opencart_network
+    env_file:
+      - .env
+    environment:
+      - OPENCART_HOST=${OPENCART_HOST:-localhost}
+      - OPENCART_DATABASE_HOST=mariadb
+      - OPENCART_DATABASE_PORT_NUMBER=3306
+      - OPENCART_DATABASE_USER=${MARIADB_USER:-opencart_user}
+      - OPENCART_DATABASE_PASSWORD=${MARIADB_PASSWORD}
+      - OPENCART_DATABASE_NAME=${MARIADB_DATABASE:-opencart_db}
+    volumes:
+      - opencart_data:/bitnami/opencart
+      - opencart_storage_data:/bitnami/opencart_storage/
+    depends_on:
+      - mariadb
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  mariadb_data:
+    driver: local
+  opencart_data:
+    driver: local
+  opencart_storage_data:
+    driver: local
+
+networks:
+  opencart_network:

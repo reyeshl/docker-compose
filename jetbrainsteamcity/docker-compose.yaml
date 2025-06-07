@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  teamcity:
+    image: jetbrains/teamcity-server:latest
+    container_name: teamcity_server
+    networks: 
+      - tc_network        
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8111:8111"  # Bind to localhost only
+    volumes:
+      - ./teamcity_data:/data/teamcity_server/datadir
+      - ./teamcity_logs:/opt/teamcity/logs
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+
+volumes:
+  teamcity_data:
+  teamcity_logs:
+
+networks: 
+  tc_network:

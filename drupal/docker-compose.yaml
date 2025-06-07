@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    networks: 
+      - teamsrunner_network    
+    restart: unless-stopped
+    # Removed port exposure for security
+    # ports:
+    #   - 3307:3306
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-drupaldb}
+      MYSQL_USER: ${MYSQL_USER:-drupaluser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./db_data:/var/lib/mysql
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+
+  drupal:
+    image: drupal:latest
+    networks: 
+      - teamsrunner_network        
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:81:80"  # Bind to localhost only
+    env_file:
+      - .env
+    environment:
+      DRUPAL_DB_HOST: db
+      DRUPAL_DB_USER: ${MYSQL_USER:-drupaluser}
+      DRUPAL_DB_PASSWORD: ${MYSQL_PASSWORD}
+      DRUPAL_DB_NAME: ${MYSQL_DATABASE:-drupaldb}
+    volumes:
+      - ./drupal_data:/var/www/html
+    depends_on: 
+      - db
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  db_data:
+networks: 
+  teamsrunner_network:

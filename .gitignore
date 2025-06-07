@@ -1,0 +1,54 @@
+# Docker Compose Security .gitignore
+# Add these entries to your .gitignore file
+
+# Environment files containing secrets
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+
+# Database data directories
+*/db_data/
+*/postgres14/
+*/redis/
+*/elasticsearch/
+
+# Application data directories
+*/wp_data/
+*/wordpress_data/
+*/presta_data/
+*/magento_data/
+*/opencart_data/
+*/opencart_storage_data/
+*/mariadb_data/
+
+# GitLab data directories
+*/gitlab/config/
+*/gitlab/logs/
+*/gitlab/data/
+
+# SSL certificates
+*/ssl/
+*/certs/
+*.pem
+*.key
+*.crt
+
+# Backup files
+*.bak
+*.backup
+*.dump
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Sample files (these are templates, not secrets)
+sample.env
+SECURITY_FIXES_SUMMARY.md
